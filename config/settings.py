@@ -150,11 +150,8 @@ AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
 ]
 
-# Social Auth configuration
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY', 'your-google-oauth2-key')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET', 'your-google-oauth2-secret')
 
-LOGIN_REDIRECT_URL = 'customers'
+LOGIN_REDIRECT_URL = 'online_course'
 
 
 from import_export.formats.base_formats import CSV, XLSX
