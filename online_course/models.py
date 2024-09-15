@@ -1,9 +1,19 @@
+from datetime import timedelta
+
+from social_core.utils import slugify
+
 from users.models import User
 from django.db import models
 
 
 # Create your models here.
 
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
@@ -23,6 +33,10 @@ class Teacher(models.Model):
         return self.full_name
 
 
+
+    def __str__(self):
+        return f'{self.phone} , {self.course_id}'
+
 class Course(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -30,10 +44,44 @@ class Course(models.Model):
     price = models.FloatField()
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     teachers = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='courses')
+    slug = models.SlugField(max_length=100)
 
-    def __str__(self):
-        return self.name
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super(Course, self).save(*args, **kwargs)
 
+    @property
+    def joined(self):
+        return f'{self.created_at.day} {self.created_at.month} {self.created_at.year}'
+
+    @property
+    def student_count(self):
+        return self.customer.aggregate(student_count=models.Count('id'))['student_count'] or 0
+
+    @property
+    def comment_count(self):
+        return self.videos.aggregate(comment_count=models.Count('comments__id'))['comment_count'] or 0
+
+    @property
+    def average_rating(self):
+        return self.videos.aggregate(
+            average_rating=models.Avg('comments__rating'))['average_rating'] or 0
+
+    @property
+    def total_duration(self):
+        total_duration = sum((video.duration for video in self.videos.all()), timedelta())
+
+        total_seconds = int(total_duration.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        return f'{hours}h {minutes}m {seconds}s'
+
+class Customer(BaseModel):
+    phone = models.CharField(max_length=20)
+    user_id = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='customer', null=True)
+    course_id = models.ForeignKey(Course, on_delete=models.SET_NULL, related_name='customer', null=True)
 
 class Video(models.Model):
     title = models.CharField(max_length=100)
