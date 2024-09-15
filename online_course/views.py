@@ -1,68 +1,99 @@
-from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import View, TemplateView, DetailView
+from django.views.generic import ListView
 
-from online_course.models import Course, Category, Video, Teacher,  Customer
+from django.shortcuts import render
+from online_course.models import Course, Category, Teacher, Blog, Video
 
 
-class CategoryListView(ListView):
-    model = Category
+# Create your views here.
+
+
+class HomeView(View):
     template_name = 'online_course/index.html'
+
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.all()
+        courses = Course.objects.all()
+        teachers = Teacher.objects.all()
+        context = {'categories': categories, 'courses': courses, 'teachers': teachers}
+        return render(request, self.template_name, context)
+
+
+class CategoryListView(View):
+    model = Category
     context_object_name = 'categories'
 
-class CategoryDetailView(DetailView):
-    model = Category
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.all()
+        context = {'categories': categories}
+        return render(request, 'online_course/base/base.html', context)
+
+
+class TeacherListView(ListView):
+    model = Teacher
+    context_object_name = 'teachers'
+    template_name = 'online_course/teacher.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(TeacherListView, self).get_context_data(**kwargs)
+        teachers = self.get_queryset()
+        context['teachers'] = teachers
+
+        return context
+
+
+class CourseListview(View):
     template_name = 'online_course/course.html'
-    context_object_name = 'category'
 
-    def get_object(self):
-        return get_object_or_404(Category, pk=self.kwargs['pk'])
+    def get(self, request, *args, **kwargs):
+        categories = Category.objects.all()
+        courses = Course.objects.all()
+        context = {'categories': categories, 'courses': courses}
+        return render(request, self.template_name, context)
 
-class CourseListView(ListView):
-    model = Course
-    template_name ='online_course/course.html'
-    context_object_name = 'online_course'
-    ordering = ['name']
-    success_url = reverse_lazy('courses_list')
 
 class CourseDetailView(DetailView):
-    model = Course
-    template_name = 'online_course/course.html'
-    context_object_name = 'course'
+    model = Video
+    template_name = 'online_course/course_details.html'
+    context_object_name = 'videos'
 
-    def get_object(self):
-        courses_id = self.kwargs.get('courses_id')
-        return get_object_or_404(Course, id=courses_id)
+    def get_context_data(self, **kwargs):
+        context = super(CourseDetailView, self).get_context_data(**kwargs)
+        course = self.get_object()
+        videos = Video.objects.filter(course=course.id)
+        context['videos'] = videos
+
+        return context
+
+
+class VideoDetailView(DetailView):
+    model = Video
+    template_name = 'online_course/video-detail.html'
+    context_object_name = 'video'
 
 
 class AboutView(TemplateView):
     template_name = 'online_course/about.html'
 
     def get_context_data(self, **kwargs):
-        contex =super(AboutView,self).get_context_data(**kwargs)
-        return contex
+        context = super(AboutView, self).get_context_data(**kwargs)
+        return context
 
-class TeacherListView(ListView):
-    model = Teacher
-    template_name = 'online_course/teacher.html'
-    context_object_name = 'teachers'
-    success_url = reverse_lazy('teachers_list')
 
 class BlogListView(ListView):
     model = Blog
     template_name = 'online_course/blog.html'
     context_object_name = 'blogs'
-    success_url = reverse_lazy('blogs_list')
 
 
-class CustomerListView(ListView):
-    model = Customer
-    template_name = 'online_course/customer.html'
-    context_object_name = 'customers'
-
-    def get_queryset(self):
-        return super().get_queryset().order_by('-id')
-
-
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        courses = Course.objects.all()
+        teachers = Teacher.objects.all()
+        video = Video.objects.all()
+        context['courses'] = courses
+        context['teachers'] = teachers
+        context['video'] = video
+        return context
 
 
