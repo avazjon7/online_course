@@ -44,7 +44,7 @@ class Course(models.Model):
     price = models.FloatField()
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     teachers = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='courses')
-    slug = models.SlugField(max_length=100)
+    # slug = models.SlugField(max_length=100)
 
     def save(self, *args, **kwargs):
         if not self.slug:
